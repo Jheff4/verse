@@ -8,6 +8,7 @@ import { Alert, Image, ScrollView, Text, View } from "react-native"
 import OAuth from "./OAuth"
 import { useSignUp } from "@clerk/clerk-expo"
 import ReactNativeModal from "react-native-modal"
+import { fetchAPI } from "@/lib/fetch"
 
 const SignUp = () => {
   const { isLoaded, signUp, setActive } = useSignUp()
@@ -56,22 +57,29 @@ const SignUp = () => {
       })
 
       if (completeSignUp.status === "complete") {
-        // create a DB user!
+        await fetchAPI("/(api)/user", {
+          method: "POST",
+          body: JSON.stringify({
+            name: form.name,
+            email: form.email,
+            clerkId: completeSignUp.createdUserId,
+          }),
+        })
 
         await setActive({ session: completeSignUp.createdSessionId })
         setVerification({ ...verification, state: "success" })
       } else {
         setVerification({
           ...verification,
-          error: "Verification failed",
-          state: "success",
+          error: "Verification failed. Please, try again.",
+          state: "failed",
         })
       }
     } catch (err: any) {
       setVerification({
         ...verification,
         error: err.errors[0].longMessage,
-        state: "success",
+        state: "failed",
       })
     }
   }
